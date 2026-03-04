@@ -67,7 +67,9 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create User")),
+      appBar: AppBar(title: const Text("Create User"),
+        backgroundColor: Colors.blue,
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

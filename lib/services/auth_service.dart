@@ -4,7 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthService {
-  static const _baseUrl = "http://192.168.1.7:8080"; // adjust for emulator/device
+  //static const _baseUrl = "http://192.168.1.7:8080"; // adjust for emulator/device
+  static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();
 
   /// Login and save JWT token
@@ -42,7 +43,7 @@ print("Login response==========================: ${response.statusCode} - ${resp
     }
 
     final response = await http.get(
-      Uri.parse("$_baseUrl/api/dashBoard"),
+      Uri.parse("$_baseUrl/api/v1/dashboard/users"),
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
@@ -70,6 +71,89 @@ print("Login response==========================: ${response.statusCode} - ${resp
     }
   }
 
+  /// Fetch user details by ID
+  static Future<Map<String, dynamic>> getUserDetails(String userId) async {
+    final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {"error": "No token found", "body": null};
+    }
+
+    final response = await http.get(
+      Uri.parse("$_baseUrl/api/v1/user/$userId"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print(  "User details response: ${response.body} ================== ");
+      return {"error": null, "body": response.body, "role": JwtDecoder.decode(token)['roles']};
+    } else {
+      return {"error": "Failed to fetch user details", "body": null};
+    }
+  }
+
+/// Add new loan for user
+  static Future<Map<String, dynamic>> addLoan(String userId, Map<String, dynamic> payload) async {
+    try {
+      final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {"error": "No token found", "body": null};
+    }
+      final response = await http.post(
+        Uri.parse("$_baseUrl/users/$userId/loans"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {"body": response.body};
+      } else {
+        return {"error": "Failed to add loan: ${response.statusCode}"};
+      }
+    } catch (e) {
+      return {"error": e.toString()};
+    }
+  }
+
+  /// Update existing loan
+  static Future<Map<String, dynamic>> updateLoan(
+      String userId, String loanId, Map<String, dynamic> payload) async {
+    try {
+      final response = await http.put(
+        Uri.parse("$_baseUrl/users/$userId/loans/$loanId"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        return {"body": response.body};
+      } else {
+        return {"error": "Failed to update loan: ${response.statusCode}"};
+      }
+    } catch (e) {
+      return {"error": e.toString()};
+    }
+  }
+   /// Delete loan
+  static Future<Map<String, dynamic>> deleteLoan(String userId, String loanId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$_baseUrl/users/$userId/loans/$loanId"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {"body": "Loan deleted"};
+      } else {
+        return {"error": "Failed to delete loan: ${response.statusCode}"};
+      }
+    } catch (e) {
+      return {"error": e.toString()};
+    }
+  }
+
   /// Logout (clear token)
   static Future<void> logout() async {
     await _storage.delete(key: "jwt");
@@ -88,7 +172,7 @@ print("Login response==========================: ${response.statusCode} - ${resp
     print("Sending token: $token");
 
     final response = await http.post(
-      Uri.parse("$_baseUrl/api/user/create"),
+      Uri.parse("$_baseUrl/api/v1/user/create"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",

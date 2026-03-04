@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/login_screen.dart';
-import 'package:sai_sangha_app/screens/user_screen.dart';
+import 'package:sai_sangha_app/screens/user_screen.dart'; // <-- ensure this has UserDetailsScreen
+import 'package:sai_sangha_app/screens/user_details_screen.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -17,7 +18,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> dashboardItems = [];
   bool isLoading = true;
   String? userRoles;
-  
 
   @override
   void initState() {
@@ -28,20 +28,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboard() async {
     final result = await AuthService.getDashboard();
     if (kDebugMode) {
-      print(  "Dashboard fetch result === : $result");
+      print("Dashboard fetch result === : $result");
     }
     if (result["error"] == null) {
       final decoded = jsonDecode(result['body']);
-
       if (decoded is List) {
         setState(() {
           dashboardItems = decoded;
           userRoles = result['role'];
           if (kDebugMode) {
-            print(  "User role from token: ${result['role']} ================== ");
-          }
-          if (kDebugMode) {
-            print(  "Dashboard items loaded: $decoded");
+            print("User role from token: ${result['role']} ================== ");
+            print("Dashboard items loaded: $decoded");
           }
           isLoading = false;
         });
@@ -75,9 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String formatRupees(num amount) {
-  return NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(amount);
-}
-
+    return NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(amount);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,33 +83,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.blue,
       ),
       drawer: Drawer(
-  child: ListView(
-    children: [
-      const DrawerHeader(
-        decoration: BoxDecoration(color: Colors.blue),
-        child: Text("Menu",
-            style: TextStyle(color: Colors.white, fontSize: 20)),
-      ),
-      // Show Create User only if logged-in user is ADMIN
-      if (userRoles != null && userRoles == "ROLE_ADMIN")
-        ListTile(
-          leading: const Icon(Icons.person_add),
-          title: const Text("Create User"),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CreateUserScreen()),
-            );
-          },
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text("Menu",
+                  style: TextStyle(color: Colors.white, fontSize: 20)),
+            ),
+            if (userRoles != null && userRoles == "ROLE_ADMIN")
+              ListTile(
+                leading: const Icon(Icons.person_add),
+                title: const Text("Create User"),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CreateUserScreen()),
+                  );
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text("Logout"),
+              onTap: _logout,
+            ),
+          ],
         ),
-      ListTile(
-        leading: const Icon(Icons.logout),
-        title: const Text("Logout"),
-        onTap: _logout,
       ),
-    ],
-  ),
-),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : dashboardItems.isEmpty
@@ -122,43 +118,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemCount: dashboardItems.length,
                   itemBuilder: (context, index) {
                     final user = dashboardItems[index];
-                    return Card(
-                      color: _getCardColor(user['role']),
-                      margin: const EdgeInsets.all(8.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Name: ${user['name']}",
+                    print(  "Rendering user: ${user['name']} with role: ${user['role']} and amountToBePaidOnCurrentMonth: ${user['amountToBePaidOnCurrentMonth']} ================== ");
+                    final num amount = (user['amountToBePaidOnCurrentMonth'] ?? 0);
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserDetailsScreen(userId: user['phone'], loggedInUserRole: userRoles ?? "USER"), // Pass role to details screen
+                          ),
+                        );
+                      },
+                      child: Card(
+                        color: _getCardColor(user['role']),
+                        margin: const EdgeInsets.all(8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Name: ${user['name']}",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              Text("Phone: ${user['phone']}"),
+                              Text("Role: ${user['role']}"),
+                              Text(
+                                "Amount To Be Paid: ${formatRupees(amount)}",
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text("Phone: ${user['phone']}"),
-                            Text("Role: ${user['role']}"),
-                            Text("Chit Amount: ${formatRupees(user['chitAmount'])}"),
-                            Text("Amount To Be Paid: ${formatRupees(user['amountToBePaid'])}",
-                              style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
-                            const SizedBox(height: 8),
-                            if (user['loanEntries'] != null &&
-                                user['loanEntries'].isNotEmpty)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text("Loan Entries:",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  ...user['loanEntries'].map<Widget>((loan) {
-                                    return Padding(
-                                      padding:
-                                          const EdgeInsets.symmetric(vertical: 4),
-                                      child: Text(
-                                          "- Loan: ${formatRupees(loan['loanAmount'])} | Interest: ${formatRupees(loan['interest'])} | ROI: ${formatRupees(loan['roi'])} | Due: ${loan['dueDate']}"),
-                                    );
-                                  }).toList(),
-                                ],
+                                    fontWeight: FontWeight.bold, fontSize: 16),
                               ),
-                          ],
+                              const SizedBox(height: 8),
+                            ],
+                          ),
                         ),
                       ),
                     );
