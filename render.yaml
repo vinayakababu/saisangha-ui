@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: saisangha-ui
+    env: docker
+    dockerfilePath: Dockerfile
+    rootDir: .
+    plan: starter
+    autoDeploy: true
