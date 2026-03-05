@@ -1,0 +1,31 @@
+# Git and CI
+.git
+.gitignore
+.github
+
+# Flutter build outputs
+build
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache
+.dart_tool
+
+# Platform-specific folders (not needed for web build)
+android
+ios
+windows
+macos
+linux
+
+# Node modules (if any)
+node_modules
+
+# IDE/editor files
+.vscode
+.idea
+*.iml
+
+# Logs and temp files
+*.log
+*.tmp
