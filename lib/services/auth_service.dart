@@ -4,8 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthService {
-  //static const _baseUrl = "http://192.168.1.7:8080"; // adjust for emulator/device
-  static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
+  static const _baseUrl = "http://192.168.1.3:8080"; // adjust for emulator/device
+  //static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();
 
   /// Login and save JWT token
@@ -26,6 +26,38 @@ print("Login response==========================: ${response.statusCode} - ${resp
     } else {
       print("Login failed: ${response.statusCode} - ${response.body}");
       return false;
+    }
+  }
+
+    /// Fetch dashboard summary using stored JWT
+  static Future<Map<String, dynamic>> getDashboardSummary() async {
+    final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {
+        "error": "No token found",
+        "body": null,
+        "role": null
+      };
+    }
+
+    final response = await http.get(
+      Uri.parse("$_baseUrl/api/v1/dashboard/summary"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return {
+        "body": response.body,
+        "error": null
+      };
+    } else {
+      return {
+        "error": "Failed to fetch dashboard summary",
+        "body": null
+      };
     }
   }
 
@@ -102,8 +134,9 @@ print("Login response==========================: ${response.statusCode} - ${resp
       return {"error": "No token found", "body": null};
     }
       final response = await http.post(
-        Uri.parse("$_baseUrl/users/$userId/loans"),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse("$_baseUrl/api/v1/loans/$userId"),
+        headers: {"Authorization": "Bearer $token",
+          "Content-Type": "application/json"},
         body: jsonEncode(payload),
       );
 
@@ -121,9 +154,14 @@ print("Login response==========================: ${response.statusCode} - ${resp
   static Future<Map<String, dynamic>> updateLoan(
       String userId, String loanId, Map<String, dynamic> payload) async {
     try {
-      final response = await http.put(
-        Uri.parse("$_baseUrl/users/$userId/loans/$loanId"),
-        headers: {"Content-Type": "application/json"},
+      final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {"error": "No token found", "body": null};
+    }
+      final response = await http.patch(
+        Uri.parse("$_baseUrl/api/v1/loans/$userId/$loanId"),
+        headers: {"Authorization": "Bearer $token",
+        "Content-Type": "application/json"},
         body: jsonEncode(payload),
       );
 
@@ -139,9 +177,14 @@ print("Login response==========================: ${response.statusCode} - ${resp
    /// Delete loan
   static Future<Map<String, dynamic>> deleteLoan(String userId, String loanId) async {
     try {
+      final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {"error": "No token found", "body": null};
+    }
       final response = await http.delete(
-        Uri.parse("$_baseUrl/users/$userId/loans/$loanId"),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse("$_baseUrl/api/v1/loans/$userId/$loanId"),
+        headers: {"Authorization": "Bearer $token",
+          "Content-Type": "application/json"},
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
