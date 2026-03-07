@@ -67,56 +67,118 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create User"),
-        backgroundColor: Colors.blue,
-        ),
+      appBar: AppBar(
+        title: const Text("Create User", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.blue),
+      ),
+      backgroundColor: const Color(0xFFF6F8FB),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Name")),
-            TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone")),
-            DropdownButtonFormField<String>( decoration: const InputDecoration(labelText: "Role"),
-             value: selectedRole, 
-             items: roles.map((role) { 
-              return DropdownMenuItem( 
-                value: role,
-                 child: Text(role), ); }).toList(),
-                  onChanged: (value) { 
-                    setState(() { 
+        padding: const EdgeInsets.all(20.0),
+        child: Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 4,
+          color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(22.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("User Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: "Name", border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: "Phone", border: OutlineInputBorder()),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: "Role", border: OutlineInputBorder()),
+                  value: selectedRole,
+                  items: roles.map((role) {
+                    return DropdownMenuItem(
+                      value: role,
+                      child: Text(role),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
                       selectedRole = value;
-                       });
-                     }, 
-                    validator: (value) => value == null ? "Please select a role" : null,
-                     ),
-            TextField(controller: chitAmountController, decoration: const InputDecoration(labelText: "Chit Amount"), keyboardType: TextInputType.number),
-            const SizedBox(height: 20),
-            const Text("Loan Details", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextField(controller: loanAmountController, decoration: const InputDecoration(labelText: "Loan Amount"), keyboardType: TextInputType.number),
-            TextField(controller: interestController, decoration: const InputDecoration(labelText: "Interest"), keyboardType: TextInputType.number),
-            TextField(controller: roiController, decoration: const InputDecoration(labelText: "ROI"), keyboardType: TextInputType.number),
-            TextField(controller: dueDateController, decoration: const InputDecoration(labelText: "Due Date (YYYY-MM-DD)"),
-            onTap: () async {
-               DateTime? pickedDate = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-      firstDate: DateTime(2000), // earliest selectable date
-      lastDate: DateTime(2100),  // latest selectable date
-    );
-
-    if (pickedDate != null) {
-      setState(() {
-        // Format as YYYY-MM-DD
-        dueDateController.text =
-            "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
-      });
-    }
-  },),
-            const SizedBox(height: 20),
-            isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(onPressed: _createUser, child: const Text("Create User")),
-          ],
+                    });
+                  },
+                  validator: (value) => value == null ? "Please select a role" : null,
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: chitAmountController,
+                  decoration: const InputDecoration(labelText: "Chit Amount", border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 24),
+                const Text("Loan Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: loanAmountController,
+                  decoration: const InputDecoration(labelText: "Loan Amount", border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: interestController,
+                  decoration: const InputDecoration(labelText: "Interest", border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: roiController,
+                  decoration: const InputDecoration(labelText: "ROI", border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: dueDateController,
+                  decoration: const InputDecoration(labelText: "Due Date (YYYY-MM-DD)", border: OutlineInputBorder()),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        dueDateController.text = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _createUser,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text("Create User", style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

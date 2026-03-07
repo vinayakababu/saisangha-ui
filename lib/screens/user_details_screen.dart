@@ -73,9 +73,13 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("User Details"),
-        backgroundColor: Colors.blue,
-        ),
+      appBar: AppBar(
+        title: const Text("User Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.blue),
+      ),
+      backgroundColor: const Color(0xFFF6F8FB),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _userFuture,
         builder: (context, snapshot) {
@@ -88,39 +92,101 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           }
 
           final user = snapshot.data!;
-          final String role = user['role'] ?? "USER"; // default to USER
+          final String role = user['role'] ?? "USER";
           final num amount = (user['amountToBePaid'] ?? 0);
 
           return ListView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
             children: [
-              Text("Name: ${user['name'] ?? 'N/A'}", style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text("Phone: ${user['phone'] ?? 'N/A'}", style: const TextStyle(fontWeight: FontWeight.normal)),
-              Text("Username: ${user['username'] ?? 'N/A'}", style: const TextStyle(fontWeight: FontWeight.normal)),
-              Text("Role: ${user['role'] ?? 'N/A'}", style: const TextStyle(fontWeight: FontWeight.normal)),
-              Text("Chit Amount: ${formatRupees(user['chitAmount'] ?? 0)}", style: const TextStyle(fontWeight: FontWeight.normal)),
-              Text("Amount To Be Paid: ${formatRupees(amount)}",
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-
-              const Text("Loan Entries:",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                elevation: 4,
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.blue.shade100,
+                            radius: 28,
+                            child: Text(
+                              (user['name'] ?? 'U')[0].toUpperCase(),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.blue),
+                            ),
+                          ),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(user['name'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                Text("Phone: ${user['phone'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
+                                Text("Username: ${user['username'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
+                                Text("Role: ${user['role'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(child: _infoItem("Chit Amount", formatRupees(user['chitAmount'] ?? 0))),
+                          const SizedBox(width: 8),
+                          Expanded(child: _infoItem("To Be Paid", formatRupees(amount))),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text("Loan Entries", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+              const SizedBox(height: 8),
               ...(user['loanEntries'] as List<dynamic>? ?? []).map((loan) => Card(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 2,
+                    color: Colors.white,
                     margin: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Loan Amount: ${formatRupees(loan['loanAmount'] ?? 0)}"),
-                          Text("Interest: ${(loan['interest'] ?? 0).toString()}"),
-                          Text("ROI: ${(loan['roi'] ?? 0).toString()}%"),
-                          Text("Include Principal: ${(loan['includePrincipal'] ?? false).toString()}"),
-                          Text("Due Date: ${loan['dueDate'] ?? 'N/A'}"),
-                          Text("Status: ${loan['status'] ?? 'N/A'}"),
-                          Text("Created Date: ${loan['createdDate'] ?? 'N/A'}"),
-                          Text("Updated Date: ${loan['updatedDate'] ?? 'N/A'}"),
-                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(child: _infoItem("Loan Amount", formatRupees(loan['loanAmount'] ?? 0))),
+                              const SizedBox(width: 8),
+                              Expanded(child: _infoItem("ROI", "${loan['roi'] ?? 0}%")),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(child: _infoItem("Monthly Interest", (loan['monthlyInterest'] ?? 0).toString())),
+                              const SizedBox(width: 8),
+                              Expanded(child: _infoItem("Include Principal", (loan['includePrincipal'] ?? false).toString())),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(child: _infoItem("Due Date", loan['dueDate'] ?? 'N/A')),
+                              const SizedBox(width: 8),
+                              Expanded(child: _infoItem("Status", loan['status'] ?? 'N/A')),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(child: _infoItem("Created", loan['createdDate'] ?? 'N/A')),
+                              const SizedBox(width: 8),
+                              Expanded(child: _infoItem("Updated", loan['updatedDate'] ?? 'N/A')),
+                            ],
+                          ),
                           if(widget.loggedInUserRole == "ROLE_ADMIN")
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -132,7 +198,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => LoanFormScreen(
-                                          userId: user['phone'], // Pass user ID or phone to identify the user in the loan form
+                                          userId: user['phone'],
                                           existingLoan: loan,
                                         ),
                                       ),
@@ -144,7 +210,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                   icon: const Icon(Icons.delete, color: Colors.red),
                                   onPressed: () async {
                                     if (loan['id'] != null) {
-                                      await _deleteLoan(loan['phone']);
+                                      await _deleteLoan(loan['id']);
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text("Loan ID missing")),
@@ -158,25 +224,45 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
                     ),
                   )),
-              const SizedBox(height: 20),
-
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text("Add Loan"),
-                onPressed: () async {
-                  final added = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => LoanFormScreen(userId: user['phone']), // Pass user ID or phone to identify the user in the loan form
+              const SizedBox(height: 24),
+              if (widget.loggedInUserRole == "ROLE_ADMIN")
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text("Add Loan", style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                  );
-                  if (added == true) _refresh();
-                },
-              ),
+                    onPressed: () async {
+                      final added = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LoanFormScreen(userId: user['phone']),
+                        ),
+                      );
+                      if (added == true) _refresh();
+                    },
+                  ),
+                ),
             ],
           );
         },
       ),
     );
   }
-}
+
+  Widget _infoItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+        const SizedBox(height: 2),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black)),
+      ],
+    );
+  }
+  }
+

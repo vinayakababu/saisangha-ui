@@ -14,7 +14,6 @@ class LoanFormScreen extends StatefulWidget {
 class _LoanFormScreenState extends State<LoanFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _loanAmountController;
-  late TextEditingController _interestController;
   late TextEditingController _roiController;
   late TextEditingController _dueDateController;
   bool _includePrincipal = true;
@@ -24,8 +23,6 @@ class _LoanFormScreenState extends State<LoanFormScreen> {
     super.initState();
     _loanAmountController = TextEditingController(
         text: widget.existingLoan?['loanAmount']?.toString() ?? '');
-    _interestController = TextEditingController(
-        text: widget.existingLoan?['interest']?.toString() ?? '');
     _roiController = TextEditingController(
         text: widget.existingLoan?['roi']?.toString() ?? '');
     _dueDateController =
@@ -36,17 +33,30 @@ class _LoanFormScreenState extends State<LoanFormScreen> {
   @override
   void dispose() {
     _loanAmountController.dispose();
-    _interestController.dispose();
     _roiController.dispose();
     _dueDateController.dispose();
     super.dispose();
+  }
+
+    Future<void> _pickDueDate() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _dueDateController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
   }
 
   Future<void> _saveLoan() async {
     if (_formKey.currentState!.validate()) {
       final payload = {
         "loanAmount": double.tryParse(_loanAmountController.text) ?? 0,
-        "interest": double.tryParse(_interestController.text) ?? 0,
         "roi": double.tryParse(_roiController.text) ?? 0,
         "dueDate": _dueDateController.text,
         "includePrincipal": _includePrincipal,
@@ -56,6 +66,7 @@ class _LoanFormScreenState extends State<LoanFormScreen> {
           ? await AuthService.addLoan(widget.userId, payload)
           : await AuthService.updateLoan(
               widget.userId, widget.existingLoan?['id'], payload);
+        print( "Loan save result: $result ================== ");
 
       if (result['error'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,48 +89,78 @@ class _LoanFormScreenState extends State<LoanFormScreen> {
     final isEdit = widget.existingLoan != null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? "Edit Loan" : "Add Loan"),
-        backgroundColor: Colors.blue,
+        title: Text(isEdit ? "Edit Loan" : "Add Loan", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.blue),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _loanAmountController,
-                decoration: const InputDecoration(labelText: "Loan Amount"),
-                keyboardType: TextInputType.number,
-                validator: (val) =>
-                    val == null || val.isEmpty ? "Enter loan amount" : null,
+      backgroundColor: const Color(0xFFF6F8FB),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              elevation: 4,
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(22.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(isEdit ? "Edit Loan Details" : "Add Loan Details", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue)),
+                      const SizedBox(height: 18),
+                      TextFormField(
+                        controller: _loanAmountController,
+                        decoration: const InputDecoration(labelText: "Loan Amount", border: OutlineInputBorder()),
+                        keyboardType: TextInputType.number,
+                        validator: (val) => val == null || val.isEmpty ? "Enter loan amount" : null,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _roiController,
+                        decoration: const InputDecoration(labelText: "ROI (%)", border: OutlineInputBorder()),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _dueDateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: "Due Date",
+                          prefixIcon: Icon(Icons.calendar_today),
+                          border: OutlineInputBorder(),
+                        ),
+                        onTap: _pickDueDate,
+                        validator: (value) => value == null || value.isEmpty ? "Select due date" : null,
+                      ),
+                      const SizedBox(height: 10),
+                      SwitchListTile(
+                        title: const Text("Include Principal"),
+                        value: _includePrincipal,
+                        onChanged: (val) => setState(() => _includePrincipal = val),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _saveLoan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(isEdit ? "Update Loan" : "Add Loan", style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              TextFormField(
-                controller: _interestController,
-                decoration: const InputDecoration(labelText: "Interest"),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _roiController,
-                decoration: const InputDecoration(labelText: "ROI (%)"),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _dueDateController,
-                decoration: const InputDecoration(
-                    labelText: "Due Date (YYYY-MM-DD)"),
-              ),
-              SwitchListTile(
-                title: const Text("Include Principal"),
-                value: _includePrincipal,
-                onChanged: (val) => setState(() => _includePrincipal = val),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveLoan,
-                child: Text(isEdit ? "Update Loan" : "Add Loan"),
-              ),
-            ],
+            ),
           ),
         ),
       ),
