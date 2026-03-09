@@ -4,8 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthService {
-  static const _baseUrl = "http://192.168.1.5:8080"; // adjust for emulator/device
-  //static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
+  //static const _baseUrl = "http://192.168.1.5:8080"; // adjust for emulator/device
+  static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();
   static String? _token;
   static String? _userId;
