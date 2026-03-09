@@ -4,9 +4,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthService {
-  //static const _baseUrl = "http://192.168.1.3:8080"; // adjust for emulator/device
-  static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
+  static const _baseUrl = "http://192.168.1.5:8080"; // adjust for emulator/device
+  //static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();
+  static String? _token;
+  static String? _userId;
+
 
   /// Login and save JWT token
   static Future<bool> login(String username, String password) async {
@@ -22,6 +25,7 @@ print("Login response==========================: ${response.statusCode} - ${resp
       final token = data['token'];
       await _storage.write(key: "jwt", value: token);
       print("Login success, token saved: $token");
+
       return true;
     } else {
       print("Login failed: ${response.statusCode} - ${response.body}");
@@ -181,6 +185,7 @@ print("Login response==========================: ${response.statusCode} - ${resp
     if (token == null) {
       return {"error": "No token found", "body": null};
     }
+    print(  "Attempting to delete loan with userId: $userId and loanId: $loanId using token: $token ================== ");
       final response = await http.delete(
         Uri.parse("$_baseUrl/api/v1/loans/$userId/$loanId"),
         headers: {"Authorization": "Bearer $token",
@@ -213,6 +218,7 @@ print("Login response==========================: ${response.statusCode} - ${resp
   try {
     final token = await _storage.read(key: "jwt");
     print("Sending token: $token");
+    print(  "Creating user with data: $userData ================== ");
 
     final response = await http.post(
       Uri.parse("$_baseUrl/api/v1/user/create"),
@@ -235,5 +241,79 @@ print("Login response==========================: ${response.statusCode} - ${resp
     return false;
   }
 }
+
+static Future<bool> updateUser(String userId, Map<String, dynamic> userData) async {
+  try {
+    final token = await _storage.read(key: "jwt");
+    print("Sending token for update: $token");
+
+    final response = await http.patch(
+      Uri.parse("$_baseUrl/api/v1/user/$userId"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(userData),
+    );
+
+    print("UpdateUser response: ${response.statusCode} - ${response.body}");
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    print("UpdateUser exception: $e");
+    return false;
+  }
+
+}
+
+static Future<Map<String, dynamic>> getUserNotifications(String userId) async {
+    final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {"error": "No token found", "body": null};
+    }
+
+    final response = await http.get(
+      Uri.parse("$_baseUrl/api/v1/notifications/user/$userId"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+    print(  "User notifications response: ${response.body} ================== "); 
+
+    if (response.statusCode == 200) {
+      print(  "User details response: ${response.body} ================== ");
+      return {"error": null, "body": response.body, "role": JwtDecoder.decode(token)['roles']};
+    } else {
+      return {"error": "Failed to fetch user details", "body": null};
+    }
+  }
+
+  static Future<Map<String, dynamic>> markNotificationAsRead(String notificationId) async {
+    final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return {"error": "No token found", "body": null};
+    }
+    print(  "Marking notification as read with ID: $notificationId using token: $token ================== ");
+    final response = await http.get(
+      Uri.parse("$_baseUrl/api/v1/notifications/$notificationId"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print(  "User details response: ${response.body} ================== ");
+      return {"error": null, "body": response.body, "role": JwtDecoder.decode(token)['roles']};
+    } else {
+      return {"error": "Failed to fetch user details", "body": null};
+    }
+  }
+
 
 }

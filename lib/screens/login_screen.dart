@@ -68,11 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                   child: Column(
                     children: [
-                      CircleAvatar(
+                     /* CircleAvatar(
                         radius: 38,
                         backgroundColor: Colors.white,
                         backgroundImage: AssetImage('assets/saibaba.png'),
-                      ),
+                      ),*/
+                      Icon(Icons.spa_rounded, size: 48, color: Colors.white),
+                      SizedBox(height: 8),
                       const SizedBox(height: 18),
                       Text(
                         "SaiSangha",

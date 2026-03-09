@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
@@ -6,6 +7,7 @@ import 'package:sai_sangha_app/screens/login_screen.dart';
 import 'package:sai_sangha_app/screens/user_screen.dart'; // <-- ensure this has UserDetailsScreen
 import 'package:sai_sangha_app/screens/user_details_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:sai_sangha_app/screens/notification_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,12 +21,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? dashboardSummary;
   bool isLoading = true;
   String? userRoles;
+  int unreadCount = 0;
+  Timer? _timer;
+  
 
   @override
   void initState() {
     super.initState();
     _loadDashboard();
+    _loadUnreadCount();
+
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _loadUnreadCount();
+  });
+
   }
+
+  @override
+void dispose() {
+  _timer?.cancel();
+  super.dispose();
+}
 
   Future<void> _loadDashboard() async {
     final dashboardResult = await AuthService.getDashboard();
@@ -55,6 +72,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() => isLoading = false);
     }
   }
+
+   Future<void> _loadUnreadCount() async {
+    final result = await AuthService.getUserNotifications("9739871306");
+    if (result['error'] == null && result['body'] != null) {
+      final count = jsonDecode(result['body']) as List<dynamic>;
+       if (kDebugMode) {
+        print("Unread notifications count: ${count.length} ================== ");
+      }
+      setState(() => unreadCount =  count.length);
+    }
+  }
+
+  
 
   Future<void> _logout() async {
     await AuthService.logout();
@@ -96,11 +126,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.blue),
-      ),
+  title: const Text("Dashboard", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+  backgroundColor: Colors.white,
+  elevation: 0,
+  iconTheme: const IconThemeData(color: Colors.blue),
+  actions: [
+    Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications, color: Colors.blue),
+          onPressed: () async {
+            final result = await AuthService.getUserNotifications("9739871306");
+            if (result['error'] == null && result['body'] != null) {
+              final notifications = jsonDecode(result['body']) as List<dynamic>;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationsScreen(notifications: notifications),
+                ),
+              ).then((_) => _loadUnreadCount()); // refresh count after viewing
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error: ${result['error']}")),
+              );
+            }
+          },
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                unreadCount.toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+      ],
+    ),
+  ],
+),
+
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -130,7 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const CreateUserScreen()),
+                        builder: (context) => const CreateUserScreen(userId: "" ,)),
                   );
                 },
               ),
