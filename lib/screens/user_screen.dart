@@ -3,15 +3,19 @@ import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/dashboard_screen.dart';
 
 class CreateUserScreen extends StatefulWidget {
-  const CreateUserScreen({Key? key}) : super(key: key);
+  final String userId;
+  final Map<String, dynamic>? existingUser;
+  const CreateUserScreen({super.key, required this.userId, this.existingUser});
 
   @override
   _CreateUserScreenState createState() => _CreateUserScreenState();
 }
 
+
 class _CreateUserScreenState extends State<CreateUserScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final TextEditingController roleController = TextEditingController();
   final TextEditingController chitAmountController = TextEditingController();
 
@@ -21,11 +25,27 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   final TextEditingController roiController = TextEditingController();
   final TextEditingController dueDateController = TextEditingController();
 
+
+
   bool isLoading = false;
   String? selectedRole;
   final List<String> roles = ["ADMIN", "USER"]; 
+
+    @override
+  void initState() {
+    super.initState();
+    if (widget.existingUser != null) {
+    final u = widget.existingUser!;
+    nameController.text = u['name'] ?? '';
+    phoneController.text = u['phone'] ?? '';
+    passwordController.text = u['password'] ?? ''; // optional, often left blank
+    selectedRole = u['role'];
+    chitAmountController.text = (u['chitAmount'] ?? '').toString();
+    
+  } }
   
   Future<void> _createUser() async {
+    print( "Creating/updating user with name: ${nameController.text}, phone: ${phoneController.text}, role: $selectedRole, chitAmount: ${chitAmountController.text}");  
     setState(() => isLoading = true);
 
     final loanEntry = {
@@ -39,36 +59,71 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
     final userData = {
       "name": nameController.text,
       "phone": phoneController.text,
+      "password": passwordController.text,
       "role": selectedRole,
       "chitAmount": int.tryParse(chitAmountController.text) ?? 0,
       "loanEntries": [loanEntry]
     };
     print("Creating user with data: $userData");
 
-    final success = await AuthService.createUser(userData);
+
+    final success = widget.existingUser == null
+        ? await AuthService.createUser(userData)
+        : await AuthService.updateUser(widget.userId, userData);
 
     setState(() => isLoading = false);
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("User created successfully")),
+        const SnackBar(content: Text(
+                   "User updated successfully")),
       );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar( 
         const SnackBar(content: Text("Failed to create user")),
       );
     }
   }
 
+ /* Future<void> _updateUser() async {
+    final userData = {
+      "name": nameController.text,
+      "phone": phoneController.text,
+      "password": passwordController.text,
+      "role": selectedRole,
+      "chitAmount": int.tryParse(chitAmountController.text) ?? 0,
+    };
+    print("Updating user with data: $userData");
+
+    final success = await AuthService.updateUser(widget.userId, userData);
+
+    setState(() => isLoading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User updated successfully")),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar( 
+        const SnackBar(content: Text("Failed to update user")),
+      );
+    }
+  } */
+
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.existingUser != null;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Create User", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(isEdit ? "Edit User" : "Create User", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.blue),
@@ -97,6 +152,13 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                   decoration: const InputDecoration(labelText: "Phone", border: OutlineInputBorder()),
                   keyboardType: TextInputType.phone,
                 ),
+                
+                const SizedBox(height: 14),
+                TextField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(labelText: "Password", border: OutlineInputBorder()),
+                  obscureText: true,
+                ),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: "Role", border: OutlineInputBorder()),
@@ -120,6 +182,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                   decoration: const InputDecoration(labelText: "Chit Amount", border: OutlineInputBorder()),
                   keyboardType: TextInputType.number,
                 ),
+          /*      if (!isEdit) ...[
                 const SizedBox(height: 24),
                 const Text("Loan Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                 const SizedBox(height: 10),
@@ -158,7 +221,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                       });
                     }
                   },
-                ),
+                )], */
                 const SizedBox(height: 24),
                 Center(
                   child: isLoading
@@ -172,7 +235,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: const Text("Create User", style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text(isEdit ? "Update User" : "Add User", style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                 ),

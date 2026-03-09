@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:sai_sangha_app/screens/user_screen.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/loan_form_screen.dart';
+
 
 class UserDetailsScreen extends StatefulWidget {
   final String userId;
@@ -53,6 +55,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
     if (confirm == true) {
       final result = await AuthService.deleteLoan(widget.userId, loanId);
+      print("Delete loan result: $result");
       if (result['error'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Loan deleted successfully")),
@@ -139,6 +142,39 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           Expanded(child: _infoItem("To Be Paid", formatRupees(amount))),
                         ],
                       ),
+                       if(widget.loggedInUserRole == "ROLE_ADMIN")
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () async {
+                                    final updated = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => CreateUserScreen(
+                                          userId: user['phone'],
+                                          existingUser: user,
+                                        ),
+                                      ),
+                                    );
+                                    if (updated == true) _refresh();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    if (user['id'] != null) {
+                                      await _deleteLoan(user['id']);
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text("Loan ID missing")),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                     ],
                   ),
                 ),
