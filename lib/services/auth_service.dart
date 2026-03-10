@@ -7,9 +7,6 @@ class AuthService {
   //static const _baseUrl = "http://192.168.1.5:8080"; // adjust for emulator/device
   static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();
-  static String? _token;
-  static String? _userId;
-
 
   /// Login and save JWT token
   static Future<bool> login(String username, String password) async {
@@ -19,9 +16,10 @@ class AuthService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"username": username, "password": password}),
     );
-print("Login response==========================: ${response.statusCode} - ${response.body}");
+    print("Login response==========================: ${response.statusCode} - ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      print(  "Login successful, response data: $data ================== ");
       final token = data['token'];
       await _storage.write(key: "jwt", value: token);
       print("Login success, token saved: $token");
@@ -270,11 +268,13 @@ static Future<bool> updateUser(String userId, Map<String, dynamic> userData) asy
 
 }
 
-static Future<Map<String, dynamic>> getUserNotifications(String userId) async {
+static Future<Map<String, dynamic>> getUserNotifications() async {
     final token = await _storage.read(key: "jwt");
     if (token == null) {
       return {"error": "No token found", "body": null};
     }
+    final userId = JwtDecoder.decode(token)['sub']; // Extract user ID from token
+    print(  "Fetching notifications for userId: $userId using token: $token ================== ");
 
     final response = await http.get(
       Uri.parse("$_baseUrl/api/v1/notifications/user/$userId"),

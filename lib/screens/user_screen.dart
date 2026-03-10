@@ -89,34 +89,6 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
     }
   }
 
- /* Future<void> _updateUser() async {
-    final userData = {
-      "name": nameController.text,
-      "phone": phoneController.text,
-      "password": passwordController.text,
-      "role": selectedRole,
-      "chitAmount": int.tryParse(chitAmountController.text) ?? 0,
-    };
-    print("Updating user with data: $userData");
-
-    final success = await AuthService.updateUser(widget.userId, userData);
-
-    setState(() => isLoading = false);
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("User updated successfully")),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar( 
-        const SnackBar(content: Text("Failed to update user")),
-      );
-    }
-  } */
 
   @override
   Widget build(BuildContext context) {

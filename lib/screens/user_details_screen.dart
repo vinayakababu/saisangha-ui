@@ -129,6 +129,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                 Text("Phone: ${user['phone'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
                                 Text("Username: ${user['username'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
                                 Text("Role: ${user['role'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
+                                Text("CreatedAt: ${user['createdDate'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
+                                Text("LastUpdatedAt: ${user['updatedDate'] ?? 'N/A'}", style: const TextStyle(color: Colors.black54)),
                               ],
                             ),
                           ),
@@ -161,7 +163,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                     if (updated == true) _refresh();
                                   },
                                 ),
-                                IconButton(
+                            /*    IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
                                   onPressed: () async {
                                     if (user['id'] != null) {
@@ -172,7 +174,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                       );
                                     }
                                   },
-                                ),
+                                ),*/
                               ],
                             ),
                     ],

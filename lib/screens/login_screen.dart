@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     setState(() => isLoading = true);
-    print(  "Login button pressed with username ********* : ${usernameController.text} and password: ${passwordController.text}");
+   // print(  "Login button pressed with username ********* : ${usernameController.text} and password: ${passwordController.text}");
 
     bool success = await AuthService.login(
       usernameController.text,
