@@ -74,9 +74,10 @@ void dispose() {
   }
 
    Future<void> _loadUnreadCount() async {
-    final result = await AuthService.getUserNotifications("9739871306");
+    final result = await AuthService.getUserNotifications();
     if (result['error'] == null && result['body'] != null) {
-      final count = jsonDecode(result['body']) as List<dynamic>;
+      final notifications = jsonDecode(result['body']) ;
+      final count = (notifications as List<dynamic>).where((n) => n['status'] == 'UNREAD').toList();
        if (kDebugMode) {
         print("Unread notifications count: ${count.length} ================== ");
       }
@@ -136,7 +137,7 @@ void dispose() {
         IconButton(
           icon: const Icon(Icons.notifications, color: Colors.blue),
           onPressed: () async {
-            final result = await AuthService.getUserNotifications("9739871306");
+            final result = await AuthService.getUserNotifications();
             if (result['error'] == null && result['body'] != null) {
               final notifications = jsonDecode(result['body']) as List<dynamic>;
               Navigator.push(
@@ -254,8 +255,18 @@ void dispose() {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
+                                  _summaryItem("ChitFund Amount", formatRupees(dashboardSummary!["chitFundAmount"] ?? 0)),
                                   _summaryItem("Loan Given (Month)", formatRupees(dashboardSummary!["loanGivenThisMonth"] ?? 0)),
-                                  _summaryItem("Principal Collected", formatRupees(dashboardSummary!["principalCollectedThisMonth"] ?? 0)),
+                                 // _summaryItem("Principal Collected", formatRupees(dashboardSummary!["principalCollectedThisMonth"] ?? 0)),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _summaryItem("Total Expected Collection (Month)", formatRupees(dashboardSummary!["totalExpectedCollectionForThisMonth"] ?? 0)),
+                                  //  _summaryItem("Loan Given (Month)", formatRupees(dashboardSummary!["loanGivenThisMonth"] ?? 0)),
+                                  
                                 ],
                               ),
                             ],
