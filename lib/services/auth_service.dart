@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
+  static final String _baseUrl = dotenv.env['API_BASE_URL'] ?? "http://localhost:8080";
   //static const _baseUrl = "http://192.168.1.5:8080"; // adjust for emulator/device
-  static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
+  //static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();
 
   /// Login and save JWT token
   static Future<bool> login(String username, String password) async {
+    print ("API Base URL: $_baseUrl");
     print("Attempting login for user: $username");
     final response = await http.post(
       Uri.parse("$_baseUrl/auth/login"),
@@ -30,6 +33,18 @@ class AuthService {
       return false;
     }
   }
+
+  static Future getLoggedInUser() async {
+    final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      return "No token found";
+    }
+
+    final userId = JwtDecoder.decode(token)['sub'];
+    return userId;
+
+  }
+
 
     /// Fetch dashboard summary using stored JWT
   static Future<Map<String, dynamic>> getDashboardSummary() async {
@@ -93,6 +108,7 @@ class AuthService {
       return {
         "body": response.body,
         "role": role,
+        "loggedInUserId": decodedToken['sub'],
         "error": null
       };
     } else {
@@ -100,7 +116,8 @@ class AuthService {
       return {
         "error": "Failed to fetch dashboard",
         "body": null,
-        "role": null
+        "role": null,
+        "loggedInUserId": null
       };
     }
   }
@@ -263,6 +280,39 @@ static Future<bool> updateUser(String userId, Map<String, dynamic> userData) asy
     }
   } catch (e) {
     print("UpdateUser exception: $e");
+    return false;
+  }
+
+}
+  
+static Future<bool> sendNotificationToAll(String message) async {
+  print(" Sending notification to all users with message: $message ================== ");
+  try {
+    final token = await _storage.read(key: "jwt");
+    if (token == null) {
+      print("No token found, please login first.");
+      return false;
+    }
+    
+    final response = await http.post(
+      Uri.parse("$_baseUrl/api/v1/notifications/payment-reminders/all"),
+      headers: {
+        "Content-Type": "application/json", 
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"message": message}),
+    );
+    print("SendNotificationToAll response: ${response.statusCode} - ${response.body}");
+    if(response.statusCode == 200) {
+      return true;
+    } else {
+      print("Failed to send notification: ${response.statusCode} - ${response.body}");
+      return false;
+    }
+
+    
+  } catch (e) {
+    print("UpdatePassword exception: $e");
     return false;
   }
 
