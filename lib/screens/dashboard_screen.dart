@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import 'package:sai_sangha_app/screens/about_page.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/login_screen.dart';
-import 'package:sai_sangha_app/screens/user_screen.dart'; // <-- ensure this has UserDetailsScreen
+import 'package:sai_sangha_app/screens/user_screen.dart';
 import 'package:sai_sangha_app/screens/user_details_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:sai_sangha_app/screens/notification_screen.dart';
+import 'package:sai_sangha_app/screens/send_notification_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,33 +25,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? userRoles;
   int unreadCount = 0;
   Timer? _timer;
-  
+  int _selectedIndex = 0;
+  String loggedInUserId = "";
 
   @override
   void initState() {
     super.initState();
     _loadDashboard();
     _loadUnreadCount();
-
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
-    _loadUnreadCount();
-  });
-
+      _loadUnreadCount();
+    });
   }
 
   @override
-void dispose() {
-  _timer?.cancel();
-  super.dispose();
-}
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _loadDashboard() async {
     final dashboardResult = await AuthService.getDashboard();
     final summaryResult = await AuthService.getDashboardSummary();
-    if (kDebugMode) {
-      print("Dashboard fetch result === : $dashboardResult");
-      print("Dashboard summary result === : $summaryResult");
-    }
     if (dashboardResult["error"] == null && summaryResult["error"] == null) {
       final decoded = jsonDecode(dashboardResult['body']);
       final summaryDecoded = jsonDecode(summaryResult['body']);
@@ -58,11 +55,7 @@ void dispose() {
           dashboardItems = decoded;
           dashboardSummary = summaryDecoded;
           userRoles = dashboardResult['role'];
-          if (kDebugMode) {
-            print("User role from token: ${dashboardResult['role']} ================== ");
-            print("Dashboard items loaded: $decoded");
-            print("Dashboard summary loaded: $summaryDecoded");
-          }
+          loggedInUserId = dashboardResult['loggedInUserId'];
           isLoading = false;
         });
       } else {
@@ -73,19 +66,16 @@ void dispose() {
     }
   }
 
-   Future<void> _loadUnreadCount() async {
+  Future<void> _loadUnreadCount() async {
     final result = await AuthService.getUserNotifications();
     if (result['error'] == null && result['body'] != null) {
-      final notifications = jsonDecode(result['body']) ;
-      final count = (notifications as List<dynamic>).where((n) => n['status'] == 'UNREAD').toList();
-       if (kDebugMode) {
-        print("Unread notifications count: ${count.length} ================== ");
-      }
-      setState(() => unreadCount =  count.length);
+      final notifications = jsonDecode(result['body']);
+      final count = (notifications as List<dynamic>)
+          .where((n) => n['status'] == 'UNREAD')
+          .toList();
+      setState(() => unreadCount = count.length);
     }
   }
-
-  
 
   Future<void> _logout() async {
     await AuthService.logout();
@@ -95,13 +85,33 @@ void dispose() {
     );
   }
 
-   Widget _summaryItem(String label, String value) {
+  void _onItemTapped(int index,) {
+    setState(() => _selectedIndex = index);
+    switch (index) {
+      case 0: // Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+        break;
+      case 1: // Profile
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => UserDetailsScreen(userId: loggedInUserId, loggedInUserRole: userRoles ?? "USER")),
+        ).then((_) => _loadDashboard());
+        break;
+    }
+  }
+
+  Widget _summaryItem(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 13, color: Colors.black54)),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black)),
+        Text(value,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black)),
       ],
     );
   }
@@ -127,53 +137,54 @@ void dispose() {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text("Dashboard", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-  backgroundColor: Colors.white,
-  elevation: 0,
-  iconTheme: const IconThemeData(color: Colors.blue),
-  actions: [
-    Stack(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.notifications, color: Colors.blue),
-          onPressed: () async {
-            final result = await AuthService.getUserNotifications();
-            if (result['error'] == null && result['body'] != null) {
-              final notifications = jsonDecode(result['body']) as List<dynamic>;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NotificationsScreen(notifications: notifications),
+        title: const Text("Sai Sangha Dashboard",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.blue),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications, color: Colors.blue),
+                onPressed: () async {
+                  final result = await AuthService.getUserNotifications();
+                  if (result['error'] == null && result['body'] != null) {
+                    final notifications =
+                        jsonDecode(result['body']) as List<dynamic>;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            NotificationsScreen(notifications: notifications),
+                      ),
+                    ).then((_) => _loadUnreadCount());
+                  }
+                },
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      unreadCount.toString(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ),
-              ).then((_) => _loadUnreadCount()); // refresh count after viewing
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Error: ${result['error']}")),
-              );
-            }
-          },
-        ),
-        if (unreadCount > 0)
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                unreadCount.toString(),
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
+            ],
           ),
-      ],
-    ),
-  ],
-),
-
+        ],
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -189,27 +200,70 @@ void dispose() {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Icon(Icons.spa_rounded, size: 48, color: Colors.white),
+                  //Icon(Icons.spa_rounded, size: 48, color: Colors.white),
+                  CircleAvatar(
+                        radius: 38,
+                        backgroundColor: Colors.white,
+                        backgroundImage: AssetImage('saibaba.png'),
+                      ),
                   SizedBox(height: 8),
-                  Text("Menu", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text("Menu",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
-            if (userRoles != null && userRoles == "ROLE_ADMIN")
+            ListTile(
+              leading: const Icon(Icons.dashboard, color: Colors.blue),
+              title: const Text("Dashboard"),
+              onTap: () => _onItemTapped(0),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person, color: Colors.green),
+              title: const Text("Profile"),
+              onTap: () => _onItemTapped(1),
+            ),
+            if (userRoles == "ROLE_ADMIN")
+              ListTile(
+                leading: const Icon(Icons.notifications_active, color: Colors.orange),
+                title: const Text("Send Notification"),
+                onTap: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => TriggerNotificationScreen()),
+                  );
+
+                },
+              ),
+            if (userRoles == "ROLE_ADMIN")
               ListTile(
                 leading: const Icon(Icons.person_add, color: Colors.blue),
-                title: const Text("Create User", style: TextStyle(fontWeight: FontWeight.w500)),
+                title: const Text("Create User"),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const CreateUserScreen(userId: "" ,)),
+                        builder: (context) => const CreateUserScreen(userId: "")),
                   );
                 },
               ),
             ListTile(
+              leading: const Icon(Icons.info_outline, color: Colors.blueGrey),
+              title: const Text("About"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutPage()),
+                );
+              },
+            ),
+           
+            ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.w500)),
+              title: const Text("Logout"),
               onTap: _logout,
             ),
           ],
@@ -219,13 +273,17 @@ void dispose() {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : dashboardItems.isEmpty
-              ? const Center(child: Text("No dashboard data available", style: TextStyle(fontSize: 18)))
+              ? const Center(
+                  child: Text("No dashboard data available",
+                      style: TextStyle(fontSize: 18)))
               : ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   children: [
                     if (dashboardSummary != null)
                       Card(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18)),
                         elevation: 4,
                         color: Colors.white,
                         margin: const EdgeInsets.only(bottom: 18),
@@ -234,7 +292,10 @@ void dispose() {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("Dashboard Summary", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.blue)),
+                              const Text("Dashboard Summary",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+ fontSize: 20, color: Colors.blue)),
                               const SizedBox(height: 12),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -328,6 +389,58 @@ void dispose() {
                     }).toList(),
                   ],
                 ),
+                bottomNavigationBar: BottomNavigationBar(
+  currentIndex: _selectedIndex,
+  onTap: (index) {
+    setState(() => _selectedIndex = index);
+    switch (index) {
+      case 0:
+        // Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+        break;
+      case 1:
+        // Notifications (admin only)
+          AuthService.getUserNotifications().then((result) {
+            if (result['error'] == null && result['body'] != null) {
+              final notifications = jsonDecode(result['body']) as List<dynamic>;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationsScreen(notifications: notifications),
+                ),
+              ).then((_) => _loadUnreadCount());
+            }
+          });
+        
+        break;
+      case 2:
+        // About
+       Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => UserDetailsScreen(userId: loggedInUserId, loggedInUserRole: userRoles ?? "USER")),
+        ).then((_) => _loadDashboard());
+        break;
+    }
+  },
+  items: const [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.dashboard),
+      label: 'Dashboard',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.notifications),
+      label: 'Notifications',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.person, color: Colors.green),
+      label: 'Profile',
+    ),
+  ],
+),
+
  
     );
 }

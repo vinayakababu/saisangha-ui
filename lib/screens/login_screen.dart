@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/dashboard_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -68,12 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                   child: Column(
                     children: [
-                     /* CircleAvatar(
+                      CircleAvatar(
                         radius: 38,
                         backgroundColor: Colors.white,
-                        backgroundImage: AssetImage('assets/saibaba.png'),
-                      ),*/
-                      Icon(Icons.spa_rounded, size: 48, color: Colors.white),
+                        backgroundImage: AssetImage('saibaba.png'),
+                      ),
+                     // Icon(Icons.spa_rounded, size: 48, color: Colors.white),
                       SizedBox(height: 8),
                       const SizedBox(height: 18),
                       Text(

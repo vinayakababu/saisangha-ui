@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/dashboard_screen.dart';
+import 'dart:async';
 
 class CreateUserScreen extends StatefulWidget {
   final String userId;
@@ -126,9 +127,11 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                 ),
                 
                 const SizedBox(height: 14),
-                TextField(
+                TextFormField(
                   controller: passwordController,
                   decoration: const InputDecoration(labelText: "Password", border: OutlineInputBorder()),
+                  validator: (value) =>
+                    value!.length < 8 ? "Password must be at least 8 characters" : null,
                   obscureText: true,
                 ),
                 const SizedBox(height: 14),
