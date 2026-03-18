@@ -5,7 +5,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
-  static final String _baseUrl = dotenv.env['API_BASE_URL'] ?? "http://localhost:8080";
+   static const String _baseUrl = String.fromEnvironment("API_BASE_URL");
   //static const _baseUrl = "http://192.168.1.5:8080"; // adjust for emulator/device
   //static const _baseUrl = "https://saisangha-app-b6wp.onrender.com"; // production URL
   static const _storage = FlutterSecureStorage();

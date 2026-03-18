@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sai_sangha_app/screens/login_screen.dart';
 import 'package:sai_sangha_app/services/auth_service.dart';
 import 'package:sai_sangha_app/screens/dashboard_screen.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
    // Ensure binding is initialized before async work
-  await dotenv.load(fileName: ".env");
   runApp(const SaiSanghaApp());
 }
 

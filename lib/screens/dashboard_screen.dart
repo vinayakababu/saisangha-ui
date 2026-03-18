@@ -200,12 +200,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  //Icon(Icons.spa_rounded, size: 48, color: Colors.white),
-                  CircleAvatar(
+                  Icon(Icons.spa_rounded, size: 48, color: Colors.white),
+                 /* CircleAvatar(
                         radius: 38,
                         backgroundColor: Colors.white,
                         backgroundImage: AssetImage('saibaba.png'),
-                      ),
+                      ), */
                   SizedBox(height: 8),
                   Text("Menu",
                       style: TextStyle(
